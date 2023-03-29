@@ -1,11 +1,76 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
-
-const inter = Inter({ subsets: ['latin'] })
+import { Mumbai } from "@thirdweb-dev/chains";
+import {
+  ConnectWallet,
+  useAddress,
+  useContract,
+  useLogin,
+  useNetworkMismatch,
+  useSwitchChain,
+  useUser,
+} from "@thirdweb-dev/react";
+import Head from "next/head";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function Home() {
+  const { user } = useUser();
+  const { login } = useLogin();
+  const address = useAddress();
+  const isNetworkMismatch = useNetworkMismatch();
+  const switchChain = useSwitchChain();
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  const { contract } = useContract(
+    "0x7729D2113071fd612163F3cD41889534C9aeF296"
+  );
+
+  const claim = useCallback(async () => {
+    if (!user) return;
+    try {
+      if (isNetworkMismatch) {
+        try {
+          await switchChain(Mumbai.chainId);
+          return;
+        } catch (e) {
+          console.log(e);
+          return;
+        }
+      } else {
+        setIsClaiming(true);
+        const claimedTx = await contract?.erc1155.claimTo(user.address, 0, 1);
+        console.log(claimedTx);
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsClaiming(false);
+    }
+  }, [contract?.erc1155, isNetworkMismatch, switchChain, user]);
+
+  const userAddress = useMemo(() => {
+    return user?.address;
+  }, [user?.address]);
+
+  const handleLogin = useCallback(async () => {
+    try {
+      await login({
+        chainId: Mumbai.chainId.toString(),
+        domain: process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN,
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  }, [login]);
+
+  useEffect(() => {
+    const authorize = async () => {
+      await handleLogin();
+    };
+    if (address && !userAddress) {
+      authorize();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userAddress, address]);
+
   return (
     <>
       <Head>
@@ -14,110 +79,22 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+      <main>
+        <ConnectWallet />
+        <p>Authenticated with: {user?.address}</p>
+        <button
+          style={{
+            paddingLeft: "4rem",
+            paddingRight: "4rem",
+            paddingTop: "1rem",
+            paddingBottom: "1rem",
+            cursor: "pointer",
+          }}
+          onClick={claim}
+        >
+          {isClaiming ? "Claiming..." : "Claim"}
+        </button>
       </main>
     </>
-  )
+  );
 }

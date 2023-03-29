@@ -9,14 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@thirdweb-dev/auth": "0.0.0-dev-10366f5-20230328182247",
+    "@thirdweb-dev/chains": "0.0.0-dev-10366f5-20230328182247",
+    "@thirdweb-dev/react": "0.0.0-dev-10366f5-20230328182247",
+    "@thirdweb-dev/sdk": "0.0.0-dev-10366f5-20230328182247",
     "@types/node": "18.15.11",
     "@types/react": "18.0.31",
     "@types/react-dom": "18.0.11",
     "eslint": "8.37.0",
     "eslint-config-next": "13.2.4",
+    "ethers": "^5.7.2",
     "next": "13.2.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "typescript": "5.0.2"
+  },
+  "resolutions": {
+    "@thirdweb-dev/chains": "0.0.0-dev-10366f5-20230328182247",
+    "@thirdweb-dev/react-core": "0.0.0-dev-10366f5-20230328182247"
   }
 }
